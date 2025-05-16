@@ -2,6 +2,11 @@ import streamlit as st
 from google import genai
 from google.genai import types
 from Markdown2docx import Markdown2docx
+import markdown
+from docx import Document
+from bs4 import BeautifulSoup
+import io
+from htmldocx import HtmlToDocx
 
 client = genai.Client(api_key=st.secrets['GEMINI_API_KEY'])
 model = 'gemini-2.5-flash-preview-04-17'
@@ -131,19 +136,45 @@ if st.session_state.response:
     if st.session_state.response_text_house_view:
         '---'
         st.session_state.response_text_house_view
-        md = st.session_state.response_text_citation + st.session_state.response_text_house_view
-        with open('mm_report.md', 'w') as f:
-            f.write(md)
-        project = Markdown2docx('mm_report')
-        project.eat_soup()
-        project.save()
-        with open('mm_report.docx', "rb") as file:
-            file_bytes = file.read()
-        # Add download button
-        st.download_button(
-            label="下載 Word 檔案",
-            data=file_bytes,
-            file_name="mm_report.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            type='primary',
-        )
+        markdown_text = st.session_state.response_text_citation + st.session_state.response_text_house_view
+        # with open('mm_report.md', 'w') as f:
+        #     f.write(markdown_text)
+        # project = Markdown2docx('mm_report')
+        # project.eat_soup()
+        # project.save()
+        # with open('mm_report.docx', "rb") as file:
+        #     file_bytes = file.read()
+
+        # 將Markdown轉換為HTML
+        html = markdown.markdown(markdown_text, extensions=['extra', 'nl2br', 'sane_lists'])
+        
+        # 創建一個Word文檔
+        doc = Document()
+        
+        # 使用htmldocx將HTML轉換為Word
+        parser = HtmlToDocx()
+        parser.add_html_to_document(html, doc)
+        
+        # 保存為BytesIO對象以便在Streamlit中下載
+        docx_io = io.BytesIO()
+        doc.save(docx_io)
+        docx_io.seek(0)
+
+        # Add download buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            st.download_button(
+                label="下載 Word 檔案",
+                data=docx_io,
+                file_name="mm_report.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                type='primary',
+            )
+        with col2:
+            st.download_button(
+                label="下載 Markdown 檔案",
+                data=markdown_text,
+                file_name="mm_report.md",
+                mime="text/markdown",
+                type='primary',
+            )
