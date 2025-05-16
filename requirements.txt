@@ -1,5 +1,5 @@
 streamlit
 google-genai
-Markdown2docx
-Markdown
+markdown
 htmldocx
+docx

@@ -1,12 +1,12 @@
 import streamlit as st
 from google import genai
 from google.genai import types
-from Markdown2docx import Markdown2docx
+
 import markdown
-from docx import Document
-from bs4 import BeautifulSoup
-import io
 from htmldocx import HtmlToDocx
+from docx import Document
+
+import io
 
 client = genai.Client(api_key=st.secrets['GEMINI_API_KEY'])
 model = 'gemini-2.5-flash-preview-04-17'
@@ -93,14 +93,16 @@ if st.session_state.response:
     if not st.session_state.response_text_citation:
         response = st.session_state.response
         response_text = response.text
-        for grounding_support in response.model_dump()['candidates'][0]['grounding_metadata']['grounding_supports'][::-1]:
+        for grounding_support in response.model_dump()['candidates'][0]['grounding_metadata']['grounding_supports']:
             marker = ''
             for i in grounding_support['grounding_chunk_indices']:
                 marker += f'[[{i}]]'
             response_text = response_text.replace(grounding_support['segment']['text'], grounding_support['segment']['text'] + marker)
-        response_text += '\n\n\n'
+        # response_text += '\n\n\n'
         for i, grounding_chunk in enumerate(response.model_dump()['candidates'][0]['grounding_metadata']['grounding_chunks']):
-            response_text += f"[{i}]: {grounding_chunk['web']['uri']}\n"
+            # Reference-style Links cannot be converted to HTML
+            # response_text += f"[{i}]: {grounding_chunk['web']['uri']}\n"
+            response_text = response_text.replace(f"[{i}]", f"[{i}]({grounding_chunk['web']['uri']})")
         st.session_state.response_text_citation = response_text
     '---'
     st.session_state.response_text_citation
@@ -137,17 +139,9 @@ if st.session_state.response:
         '---'
         st.session_state.response_text_house_view
         markdown_text = st.session_state.response_text_citation + st.session_state.response_text_house_view
-        # with open('mm_report.md', 'w') as f:
-        #     f.write(markdown_text)
-        # project = Markdown2docx('mm_report')
-        # project.eat_soup()
-        # project.save()
-        # with open('mm_report.docx', "rb") as file:
-        #     file_bytes = file.read()
 
         # 將Markdown轉換為HTML
-        html = markdown.markdown(markdown_text, extensions=['extra', 'nl2br', 'sane_lists'])
-        
+        html = markdown.markdown(markdown_text)
         # 創建一個Word文檔
         doc = Document()
         
@@ -166,7 +160,7 @@ if st.session_state.response:
             st.download_button(
                 label="下載 Word 檔案",
                 data=docx_io,
-                file_name="mm_report.docx",
+                file_name="MacroMicro_AI_Generated_Report.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 type='primary',
             )
@@ -174,7 +168,7 @@ if st.session_state.response:
             st.download_button(
                 label="下載 Markdown 檔案",
                 data=markdown_text,
-                file_name="mm_report.md",
+                file_name="MacroMicro_AI_Generated_Report.md",
                 mime="text/markdown",
                 type='primary',
             )
