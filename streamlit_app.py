@@ -8,10 +8,9 @@ from docx import Document
 import io
 
 client = genai.Client(api_key=st.secrets['GEMINI_API_KEY'])
-model = 'gemini-2.5-flash-preview-04-17'
 price = {
-    'gemini-2.0-flash': {'input': 0.1, 'output': 0.4},
-    'gemini-2.5-flash-preview-04-17': {'input': 0.15, 'output': 0.6, 'thinking': 3.5},
+    'gemini-2.5-flash-preview-05-20': {'input': 0.15, 'output': 0.6, 'thinking': 3.5},
+    'gemini-2.5-pro-preview-05-06': {'input': 2.5, 'output': 15},
 }
 
 prompt_token_count = 0
@@ -55,6 +54,7 @@ if 'response_text_house_view' not in st.session_state:
     st.session_state.response_text_house_view = None
 
 with st.sidebar:
+    model = st.selectbox('Model', price.keys(), disabled=True)
     uploaded_file = st.file_uploader("Upload Report to generate Prompt", type=['pdf', 'docx', 'md'])
     if uploaded_file and not st.session_state.ai_generated_prompt:
         import os
